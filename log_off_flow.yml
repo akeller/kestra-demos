@@ -1,0 +1,20 @@
+id: log_off_flow
+namespace: company.team
+
+triggers:
+  - id: daily_shutdown
+    type: io.kestra.plugin.core.trigger.Schedule
+    #UTC Austin @ 4pm (could add timezone), except weekends
+    cron: 0 22 * * 1-5
+
+tasks:
+  - id: hello
+    type: io.kestra.plugin.core.log.Log
+    message: Hello World! 🚀
+  - id: send_reminder_message_to_slack
+    type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+    url: "{{ secret('SLACK_WEBHOOK') }}"
+    payload: |
+      {
+        "text": "Time to shutdown"
+      }
