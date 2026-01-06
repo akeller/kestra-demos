@@ -1,20 +1,59 @@
 id: log_off_flow
 namespace: company.team
 
+tasks:
+  - id: hello_log
+    type: io.kestra.plugin.core.log.Log
+    message: Hello World! 🚀
+  - id: get_calendar_events
+    type: io.kestra.plugin.googleworkspace.calendar.ListEvents
+    serviceAccount: "{{ secret('NEW_SA_GCAL') }}"
+    calendarId: "{{ secret('CALENDARID') }}"
+    #7AM US Central
+    timeMin: "{{ now() | date(\"yyyy-MM-dd'T'07:00:00-06:00\") }}"
+    #5PM US Central
+    timeMax: "{{ now() | date(\"yyyy-MM-dd'T'17:00:00-06:00\") }}"
+
+  - id: for_each
+    type: io.kestra.plugin.core.flow.ForEach
+    values: "{{ outputs.get_calendar_events['metadataList'] }}"
+    tasks: 
+      - id: get_individual_event
+        type: io.kestra.plugin.core.debug.Return
+        format: "{{ json(taskrun.value).htmlLink }} }}"
+      - id: set_meetings
+        type: io.kestra.plugin.core.kv.Set
+        key: meetings_today
+        value: "{{ taskrun.iteration + 1}}"
+        kvType: NUMBER
+        ttl: PT5M
+
+  - id: check_for_events
+    type: io.kestra.plugin.core.flow.If
+    condition: "{{ kv('meetings_today') != 0 }}"
+    then:
+    - id: send_meetings_to_slack
+      type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+      url: "{{ secret('SLACK_WEBHOOK') }}"
+      payload: |
+        {
+          "text": "You went to {{ kv('meetings_today') }} meetings today!"
+        }
+    else:
+    - id: send_no_meetings_to_slack
+      type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+      url: "{{ secret('SLACK_WEBHOOK') }}"
+      payload: |
+        {
+          "text": "Hooray! No meetings today."
+        }
+
 triggers:
   - id: daily_shutdown
     type: io.kestra.plugin.core.trigger.Schedule
     #UTC Austin @ 4pm (could add timezone), except weekends
     cron: 0 22 * * 1-5
-
-tasks:
-  - id: hello
-    type: io.kestra.plugin.core.log.Log
-    message: Hello World! 🚀
-  - id: send_reminder_message_to_slack
-    type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
-    url: "{{ secret('SLACK_WEBHOOK') }}"
-    payload: |
-      {
-        "text": "Time to shutdown"
-      }
+outputs:
+  - id: sent_bool
+    type: BOOLEAN
+    value: "true"
