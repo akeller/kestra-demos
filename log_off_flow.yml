@@ -2,9 +2,51 @@ id: log_off_flow
 namespace: company.team
 
 tasks:
-  - id: hello_log
-    type: io.kestra.plugin.core.log.Log
-    message: Hello World! 🚀
+
+  - id: send_to_confluence
+    type: io.kestra.plugin.confluence.pages.Update
+    apiToken: "{{secret('CONFLUENCE')}}"
+    serverUrl: https://kestra-demo.atlassian.net/
+    username: "{{secret('EMAIL')}}"
+    pageId: "425985"
+    status: current
+    title: Weekly Recaps
+    markdown: |
+      # Append test
+      Hi from Flow code.
+      Did this delete anything? How does it look?
+
+    versionInfo:
+      number: kv('version_number')
+      message: Weekly recap (add date?)
+
+  - id: increment_version_number
+    type: io.kestra.plugin.core.kv.Set
+    key: version_number
+    value: "{{ kv('version_number') + 1 }}"
+    kvType: NUMBER
+
+
+  # - id: send_to_notion
+  #   type: io.kestra.plugin.notion.page.Update
+  #   apiToken: "{{secret('NOTION')}}"
+  #   pageId: "{{secret('PAGE_ID_NOTION')}}"
+  #   content: |
+  #     # Weekly Recaps
+
+  #     Put some stuff in here. Does it show up?
+
+  #     ## A wild H2 appeared
+  #     Something in here too.
+
+  # - id: get_notion
+  #   type: io.kestra.plugin.notion.page.Read
+  #   apiToken: "{{secret('NOTION')}}"
+  #   pageId: "{{secret('PAGE_ID_NOTION')}}"
+
+  # - id: page
+  #   type: io.kestra.plugin.core.log.Log
+  #   message: "{{outputs.get_notion.title}}, last edited {{outputs.get_notion.lastEditedTime}} with the following: {{outputs.get_notion.content}}"
 
   - id: get_issues
     type: io.kestra.plugin.core.http.Request
