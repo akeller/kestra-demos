@@ -1,0 +1,21 @@
+id: lyrebird_805364
+namespace: company.team
+
+tasks:
+
+  - id: send_to_confluence
+    type: io.kestra.plugin.confluence.pages.Update
+    apiToken: "{{secret('CONFLUENCE')}}"
+    serverUrl: https://kestra-demo.atlassian.net/
+    username: "{{secret('EMAIL')}}"
+    pageId: "425985"
+    status: current
+    title: Weekly Recaps
+    markdown: |
+      # Append test
+      Hi from Flow code.
+      Did this delete anything? How does it look?
+
+    versionInfo:
+      number: kv('version_number') #cast issue, it's a string?
+      message: Weekly recap (add date?)
