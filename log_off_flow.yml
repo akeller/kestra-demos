@@ -17,7 +17,7 @@ tasks:
       Did this delete anything? How does it look?
 
     versionInfo:
-      number: kv('version_number')
+      number: "{{ kv('version_number')}}"
       message: Weekly recap (add date?)
 
   - id: increment_version_number
@@ -98,7 +98,7 @@ tasks:
       - id: set_meetings
         type: io.kestra.plugin.core.kv.Set
         key: meetings_today
-        value: "{{ taskrun.iteration + 1}}"
+        value: "{{ taskrun.iteration + 1 }}"
         kvType: NUMBER
         ttl: PT5M
 
@@ -107,15 +107,15 @@ tasks:
     condition: "{{ kv('meetings_today') != 0 }}"
     then:
     - id: send_meetings_to_slack
-      type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+      type: io.kestra.plugin.slack.SlackIncomingWebhook
       url: "{{ secret('SLACK_WEBHOOK') }}"
       payload: |
         {
-          "text": "You went to {{ kv('meetings_today') }} meetings and closed {{kv('issues_today')}} PR or issue!"
+          "text": "You went to {{ kv('meetings_today') }} meetings and closed {{kv('issues_today')}} PR(s) or issue(s)!"
         }
     else:
     - id: send_no_meetings_to_slack
-      type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+      type: io.kestra.plugin.slack.SlackIncomingWebhook
       url: "{{ secret('SLACK_WEBHOOK') }}"
       payload: |
         {
