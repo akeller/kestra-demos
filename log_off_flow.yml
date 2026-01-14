@@ -123,10 +123,16 @@ tasks:
         }
 
 triggers:
-  - id: daily_shutdown
+  - id: weekly_wrapup
     type: io.kestra.plugin.core.trigger.Schedule
-    #UTC Austin @ 4pm (could add timezone), except weekends
-    cron: 0 22 * * 1-5
+    # Austin @ 4pm Fridays
+    cron: 0 16 * * 5
+    conditions: 
+      - type: io.kestra.plugin.core.condition.Not
+        conditions:
+          - type: io.kestra.plugin.core.condition.PublicHoliday
+            country: US
+
 outputs:
   - id: sent_bool
     type: BOOLEAN
