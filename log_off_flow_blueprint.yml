@@ -15,10 +15,10 @@ triggers:
 tasks:
   - id: send_to_confluence
     type: io.kestra.plugin.confluence.pages.Update
-    apiToken: "{{secret('CONFLUENCE')}}"
-    serverUrl: https://kestra-demo.atlassian.net/
-    username: "{{secret('EMAIL')}}"
-    pageId: "425985"
+    apiToken: "{{ secret('CONFLUENCE') }}"
+    serverUrl: "{{ secret('CONFLUENCE_SERVER_URL') }}"
+    username: "{{ secret('EMAIL') }}"
+    pageId: "{{ secret('PAGE_ID') }}"
     status: current
     title: Weekly Recaps
     markdown: |
