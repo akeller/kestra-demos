@@ -101,3 +101,25 @@ tasks:
         {
           "text": "Hooray! No meetings today."
         }
+
+
+extend:
+  title: Friday log off recap
+  description: |
+    Send a Slack message with the number of Google Calendar meetings and closed issues or PRs on GitHub that week and log it to Confluence as a weekly recap.
+
+    Prerequisites:
+      - Secrets:
+        - TODO
+    Quick start:
+      1. Set secrets
+      2. Upload flow
+      3. (Optional) Enable schedule and run
+    Expected outputs:
+      - Slack message
+      - Updated Notion page
+  tags:
+    - Getting Started # Check Blueprints page or other Blueprints for all possible tags
+  ee: false
+  demo: true
+  meta_description: Send a weekly recap from GitHub and Google Calendar to Confluence and Slack.
