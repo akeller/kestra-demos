@@ -1,0 +1,36 @@
+id: data_gen_something
+namespace: company.team
+
+inputs:
+  - id: rows
+    type: INT
+    displayName: "Number of Rows"
+    description: "Number of data rows to generate (excluding header)."
+    defaults: 10
+  - id: separator
+    type: STRING
+    displayName: "Separator"
+    description: "Column separator character (e.g., ',', ';')."
+    defaults: ","
+  - id: header
+    type: BOOL
+    displayName: "Include header"
+    description: "Include header row in the CSV output."
+    defaults: true
+tasks:
+  - id: datagen
+    type: io.kestra.plugin.datagen.core.Generate
+    store: "true"
+    generator:
+      type: io.kestra.plugin.datagen.generators.StringValueGenerator
+      locale: ["en", "US"]
+      value: |
+        #{csv '{{ inputs.separator }}','"','{{inputs.header}}','{{ inputs.rows}}','name_column','#{Name.first_name}','last_name_column','#{Name.last_name}'}
+  - id: log_values
+    type: io.kestra.plugin.core.log.Log
+    message: |
+        {{ outputs.datagen.value }}
+  - id: log_uri
+    type: io.kestra.plugin.core.log.Log
+    message: |
+        {{ outputs.datagen.uri }}
