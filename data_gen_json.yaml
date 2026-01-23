@@ -1,0 +1,28 @@
+id: data_gen_json
+namespace: company.team
+
+tasks:
+  - id: datagen
+    type: io.kestra.plugin.datagen.core.Generate
+    batchSize: 100
+    store: true
+    generator:
+      type: io.kestra.plugin.datagen.generators.JsonObjectGenerator
+      locale: ["us", "US"]
+      value:
+        name: "#{name.fullName}"
+        email: "#{internet.emailAddress}"
+        age: 30
+        address:
+          city: "#{address.city}"
+          zip: "#{address.zipCode}"
+        skills: [ "#{job.keySkills}", "#{job.position}", "hardcoded" ]
+        ts: "{{ now() }}"
+
+  - id: send_to_mongodb
+    type: io.kestra.plugin.mongodb.Load
+    connection:
+      uri: "{{ secret('MONGO_POC') }}"
+    database: "kestra_poc"
+    collection: "people_datagen"
+    from: "{{ outputs.datagen.uri }}"
