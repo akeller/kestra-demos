@@ -117,7 +117,7 @@ extend:
       3. (Optional) Enable schedule and run
     Expected outputs:
       - Slack message
-      - Updated Notion page
+      - Updated Confluence page
   tags:
     - Getting Started # Check Blueprints page or other Blueprints for all possible tags
   ee: false
