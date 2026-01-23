@@ -9,3 +9,4 @@ Nothing to see here (yet).
 * Confluence
 * Notion
 * Slack (AG-demo-slack)
+* MongoDB Atlas
