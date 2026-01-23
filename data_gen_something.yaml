@@ -20,16 +20,16 @@ inputs:
 tasks:
   - id: datagen
     type: io.kestra.plugin.datagen.core.Generate
-    store: "true"
+    store: "true" # store default is false, but if set to true you cannot get the value as an output
     generator:
       type: io.kestra.plugin.datagen.generators.StringValueGenerator
       locale: ["en", "US"]
       value: |
         #{csv '{{ inputs.separator }}','"','{{inputs.header}}','{{ inputs.rows}}','name_column','#{Name.first_name}','last_name_column','#{Name.last_name}'}
-  - id: log_values
-    type: io.kestra.plugin.core.log.Log
-    message: |
-        {{ outputs.datagen.value }}
+  # - id: log_values
+  #   type: io.kestra.plugin.core.log.Log
+  #   message: |
+  #       {{ outputs.datagen.value }}
   - id: log_uri
     type: io.kestra.plugin.core.log.Log
     message: |
