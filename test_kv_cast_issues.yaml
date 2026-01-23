@@ -17,5 +17,5 @@ tasks:
       Did this delete anything? How does it look?
 
     versionInfo:
-      number: kv('version_number') #cast issue, it's a string?
+      number: "{{ kv('version_number')}}"
       message: Weekly recap (add date?)
