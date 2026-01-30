@@ -1,0 +1,21 @@
+id: read_notion
+namespace: company.team
+
+tasks:
+  - id: read_from_notion
+    type: io.kestra.plugin.notion.page.Read
+    apiToken: "{{secret('NOTION')}}"
+    pageId: "{{secret('PAGE_ID_NOTION')}}"
+
+  - id: log_content
+    type: io.kestra.core.tasks.log.Log
+    message: "{{ outputs.read_from_notion.content }}"
+
+  - id: send_to_slack
+    type: io.kestra.plugin.slack.SlackIncomingWebhook
+    url: "{{ secret('SLACK_WEBHOOK') }}"
+    # payload: |
+    #   {
+    #     "text": "It is time for your recap! Here is what you wrote:  {{ outputs.read_from_notion.content }}."
+    #   }
+    messageText: "It is time for your recap! Here is what you wrote:  {{ outputs.read_from_notion.content }}."
