@@ -1,4 +1,4 @@
-id: notion_recap
+id: confluence_recap
 namespace: company.team
 
 triggers:
@@ -59,6 +59,29 @@ tasks:
         kvType: NUMBER
         ttl: PT5M
 
+  - id: send_to_confluence
+    type: io.kestra.plugin.confluence.pages.Update
+    apiToken: "{{ secret('CONFLUENCE') }}"
+    serverUrl: https://kestra-demo.atlassian.net/
+    username: "{{ secret('EMAIL') }}"
+    pageId: "{{ secret('PAGE_ID') }}"
+    status: current
+    title: Weekly Recaps
+    markdown: |
+      ## Weekly Recap {{ now() | date("yyyy-MM-dd") }}
+
+      You went to {{ kv('meetings_today') }} meetings and closed {{ kv('issues_today') }} PR(s) or issue(s) on the Kestra org!
+
+    versionInfo:
+      number: "{{ kv('version_number') }}"
+      message: Weekly recap {{ now() | date("yyyy-MM-dd") }}
+
+  - id: increment_version_number
+    type: io.kestra.plugin.core.kv.Set
+    key: version_number
+    value: "{{ kv('version_number') + 1 }}"
+    kvType: NUMBER
+
   - id: check_for_events
     type: io.kestra.plugin.core.flow.If
     condition: "{{ kv('meetings_today') != 0 }}"
@@ -66,24 +89,9 @@ tasks:
     - id: send_meetings_to_slack
       type: io.kestra.plugin.slack.SlackIncomingWebhook
       url: "{{ secret('SLACK_WEBHOOK') }}"
-      payload: |
-        {
-          "text": "You went to {{ kv('meetings_today') }} meetings and closed {{ kv('issues_today') }} PR(s) or issue(s)!"
-        }
+      messageText: "You went to {{ kv('meetings_today') }} meetings and closed {{ kv('issues_today') }} PR(s) or issue(s)!"
     else:
     - id: send_no_meetings_to_slack
       type: io.kestra.plugin.slack.SlackIncomingWebhook
       url: "{{ secret('SLACK_WEBHOOK') }}"
-      payload: |
-        {
-          "text": "No meetings or GitHub activity this week."
-        }
-
-  - id: send_to_notion
-    type: io.kestra.plugin.notion.page.Update
-    apiToken: "{{secret('NOTION')}}"
-    pageId: "{{secret('PAGE_ID_NOTION')}}"
-    content: |
-      ## Weekly Recap {{ now() | date("yyyy-MM-dd") }}
-
-      You went to {{ kv('meetings_today') }} meetings and closed {{ kv('issues_today') }} PR(s) or issue(s) on the Kestra org!
+      messageText: "No meetings or GitHub activity this week."
