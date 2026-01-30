@@ -1,8 +1,18 @@
 id: log_off_flow
 namespace: company.team
 
-tasks:
+triggers:
+  - id: weekly_wrapup
+    type: io.kestra.plugin.core.trigger.Schedule
+    # Austin @ 4pm Fridays
+    cron: 0 16 * * 5
+    conditions: 
+      - type: io.kestra.plugin.core.condition.Not
+        conditions:
+          - type: io.kestra.plugin.core.condition.PublicHoliday
+            country: US
 
+tasks:
   - id: send_to_confluence
     type: io.kestra.plugin.confluence.pages.Update
     apiToken: "{{secret('CONFLUENCE')}}"
@@ -84,7 +94,7 @@ tasks:
     serviceAccount: "{{ secret('NEW_SA_GCAL') }}"
     calendarId: "{{ secret('CALENDARID') }}"
     #7AM US Central
-    timeMin: "{{ now() | date(\"yyyy-MM-dd'T'07:00:00-06:00\") }}"
+    timeMin: "{{ now() | dateAdd(-5, 'DAYS') | date(\"yyyy-MM-dd'T'07:00:00-06:00\") }}"
     #5PM US Central
     timeMax: "{{ now() | date(\"yyyy-MM-dd'T'17:00:00-06:00\") }}"
 
@@ -109,29 +119,12 @@ tasks:
     - id: send_meetings_to_slack
       type: io.kestra.plugin.slack.SlackIncomingWebhook
       url: "{{ secret('SLACK_WEBHOOK') }}"
-      payload: |
-        {
-          "text": "You went to {{ kv('meetings_today') }} meetings and closed {{kv('issues_today')}} PR(s) or issue(s)!"
-        }
+      messageText: "You went to {{ kv('meetings_today') }} meetings and closed {{ kv('issues_today') }} PR(s) or issue(s)!"
     else:
     - id: send_no_meetings_to_slack
       type: io.kestra.plugin.slack.SlackIncomingWebhook
       url: "{{ secret('SLACK_WEBHOOK') }}"
-      payload: |
-        {
-          "text": "Hooray! No meetings today."
-        }
-
-triggers:
-  - id: weekly_wrapup
-    type: io.kestra.plugin.core.trigger.Schedule
-    # Austin @ 4pm Fridays
-    cron: 0 16 * * 5
-    conditions: 
-      - type: io.kestra.plugin.core.condition.Not
-        conditions:
-          - type: io.kestra.plugin.core.condition.PublicHoliday
-            country: US
+      messageText: "No meetings or GitHub activity this week."
 
 outputs:
   - id: sent_bool
