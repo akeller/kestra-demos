@@ -1,0 +1,17 @@
+id: github_search_test
+namespace: company.team
+
+tasks:
+  # - id: search_repositories
+  #   type: io.kestra.plugin.github.repositories.Search
+  #   #oauthToken: your_github_token
+  #   repository: kestra-io/plugin-github
+
+  - id: get_github_test
+    type: io.kestra.plugin.github.pulls.Search
+    repository: kestra-io/plugin-github
+    open: TRUE
+
+  - id: log_github_test
+    type: io.kestra.plugin.core.log.Log
+    message: "{{ outputs.get_github_test.uri }}"
