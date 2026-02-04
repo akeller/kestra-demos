@@ -13,63 +13,14 @@ triggers:
             country: US
 
 tasks:
-  - id: send_to_confluence
-    type: io.kestra.plugin.confluence.pages.Update
-    apiToken: "{{secret('CONFLUENCE')}}"
-    serverUrl: https://kestra-demo.atlassian.net/
-    username: "{{secret('EMAIL')}}"
-    pageId: "425985"
-    status: current
-    title: Weekly Recaps
-    markdown: |
-      # Append test
-      Hi from Flow code.
-      Did this delete anything? How does it look?
-
-    versionInfo:
-      number: "{{ kv('version_number')}}"
-      message: Weekly recap (add date?)
-
-  - id: increment_version_number
-    type: io.kestra.plugin.core.kv.Set
-    key: version_number
-    value: "{{ kv('version_number') + 1 }}"
-    kvType: NUMBER
-
-
-  # - id: send_to_notion
-  #   type: io.kestra.plugin.notion.page.Update
-  #   apiToken: "{{secret('NOTION')}}"
-  #   pageId: "{{secret('PAGE_ID_NOTION')}}"
-  #   content: |
-  #     # Weekly Recaps
-
-  #     Put some stuff in here. Does it show up?
-
-  #     ## A wild H2 appeared
-  #     Something in here too.
-
-  # - id: get_notion
-  #   type: io.kestra.plugin.notion.page.Read
-  #   apiToken: "{{secret('NOTION')}}"
-  #   pageId: "{{secret('PAGE_ID_NOTION')}}"
-
-  # - id: page
-  #   type: io.kestra.plugin.core.log.Log
-  #   message: "{{outputs.get_notion.title}}, last edited {{outputs.get_notion.lastEditedTime}} with the following: {{outputs.get_notion.content}}"
-
   - id: get_issues
     type: io.kestra.plugin.core.http.Request
-    uri:  "https://api.github.com/orgs/kestra-io/issues?filter=assigned&state=closed&since=2026-01-07T08:00:00.000-06:00"
+    uri:  "https://api.github.com/orgs/kestra-io/issues?filter=assigned&state=closed&since={{ now() | dateAdd(-5, 'DAYS') | date(\"yyyy-MM-dd'T'07:00:00-06:00\") }}"
     method: GET
     headers:
       Authorization: "Bearer {{ secret('CLASSIC_GITHUB') }}"
       Accept: application/vnd.github+json
       X-GitHub-Api-Version: 2022-11-28
-  
-  - id: log_github
-    type: io.kestra.plugin.core.log.Log
-    message: "{{ outputs.get_issues.body }}"
 
   - id: for_each_issue
     type: io.kestra.plugin.core.flow.ForEach
@@ -85,10 +36,6 @@ tasks:
         kvType: NUMBER
         ttl: PT5M
 
-  - id: log_issue_count
-    type: io.kestra.plugin.core.log.Log
-    message: "{{ kv('issues_today') }}"
-
   - id: get_calendar_events
     type: io.kestra.plugin.googleworkspace.calendar.ListEvents
     serviceAccount: "{{ secret('NEW_SA_GCAL') }}"
@@ -98,7 +45,7 @@ tasks:
     #5PM US Central
     timeMax: "{{ now() | date(\"yyyy-MM-dd'T'17:00:00-06:00\") }}"
 
-  - id: for_each
+  - id: for_each_event
     type: io.kestra.plugin.core.flow.ForEach
     values: "{{ outputs.get_calendar_events['metadataList'] }}"
     tasks: 
@@ -112,21 +59,16 @@ tasks:
         kvType: NUMBER
         ttl: PT5M
 
-  - id: check_for_events
-    type: io.kestra.plugin.core.flow.If
-    condition: "{{ kv('meetings_today') != 0 }}"
-    then:
-    - id: send_meetings_to_slack
-      type: io.kestra.plugin.slack.SlackIncomingWebhook
-      url: "{{ secret('SLACK_WEBHOOK') }}"
-      messageText: "You went to {{ kv('meetings_today') }} meetings and closed {{ kv('issues_today') }} PR(s) or issue(s)!"
-    else:
-    - id: send_no_meetings_to_slack
-      type: io.kestra.plugin.slack.SlackIncomingWebhook
-      url: "{{ secret('SLACK_WEBHOOK') }}"
-      messageText: "No meetings or GitHub activity this week."
+  - id: send_to_slack
+    type: io.kestra.plugin.slack.SlackIncomingWebhook
+    url: "{{ secret('SLACK_WEBHOOK') }}"
+    messageText: "You went to {{ kv('meetings_today') }} meetings and closed {{ kv('issues_today') }} PR(s) or issue(s) on the Kestra org!"
 
-outputs:
-  - id: sent_bool
-    type: BOOLEAN
-    value: "true"
+  - id: send_to_notion
+    type: io.kestra.plugin.notion.page.Update
+    apiToken: "{{secret('NOTION')}}"
+    pageId: "{{secret('PAGE_ID_NOTION')}}"
+    content: |
+      ## Weekly Recap {{ now() | date("yyyy-MM-dd") }}
+
+      You went to {{ kv('meetings_today') }} meetings and closed {{ kv('issues_today') }} PR(s) or issue(s) on the Kestra org!
