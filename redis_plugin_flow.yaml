@@ -13,7 +13,7 @@ tasks:
         email: "#{internet.emailAddress}"
         skills: "#{job.keySkills}"
 
-  - id: get_redis
+  - id: set_redis
     type: io.kestra.plugin.redis.json.Set
     url: "{{ secret('REDIS_CLOUD') }}"
     key: "{{ outputs.datagen.value['name'] }}"
