@@ -1,0 +1,51 @@
+id: cve_checker
+namespace: company.team
+description: A workflow to check for new CVEs daily by comparing with previously known CVEs.
+
+triggers:
+  - id: daily_schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 0 * * *" # Runs daily at midnight UTC
+
+tasks:
+  - id: zero_new_cve_count
+    type: io.kestra.plugin.core.kv.Set
+    key: "new-CVEs"
+    value: "0"
+    kvType: NUMBER
+
+  - id: http_download_cves
+    type: io.kestra.plugin.core.http.Request
+    uri: https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json
+
+  - id: log_cve_count
+    type: io.kestra.plugin.core.log.Log
+    message: "CVE count: {{ json(outputs.http_download_cves.body).count }}"
+
+  - id: for_each_cve
+    type: io.kestra.plugin.core.flow.ForEach
+    concurrencyLimit: 10
+    values: "{{ json(outputs.http_download_cves.body).vulnerabilities }}"
+    tasks:
+      - id: check_if_stored
+        type: io.kestra.plugin.core.flow.If
+        condition: "{{ kv( json(taskrun.value).cveID, errorOnMissing=false ) is not null }}"
+        then: 
+          - id: cve_known
+            type: io.kestra.plugin.core.log.Log
+            message: "Known CVE: {{ json(parent.taskrun.value).cveID }}"
+        else:
+          - id: store_unknown_cve_ids
+            type: io.kestra.plugin.core.kv.Set
+            key: "{{ json(parent.taskrun.value).cveID }}"
+            value: "{{ json(parent.taskrun.value).vulnerabilityName }}"
+            kvType: STRING
+          #- id: new_cve_count
+          #  type: io.kestra.plugin.core.kv.Set
+          #  key: "new-CVEs"
+          #  value: "{{ kv( 'new-CVEs' ) + 1 }}"
+
+  
+      
+
+  
