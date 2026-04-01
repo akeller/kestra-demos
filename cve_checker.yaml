@@ -24,7 +24,6 @@ tasks:
 
   - id: for_each_cve
     type: io.kestra.plugin.core.flow.ForEach
-    concurrencyLimit: 10
     values: "{{ json(outputs.http_download_cves.body).vulnerabilities }}"
     tasks:
       - id: check_if_stored
@@ -40,10 +39,46 @@ tasks:
             key: "{{ json(parent.taskrun.value).cveID }}"
             value: "{{ json(parent.taskrun.value).vulnerabilityName }}"
             kvType: STRING
-          #- id: new_cve_count
-          #  type: io.kestra.plugin.core.kv.Set
-          #  key: "new-CVEs"
-          #  value: "{{ kv( 'new-CVEs' ) + 1 }}"
+          - id: new_cve_count
+            type: io.kestra.plugin.core.kv.Set
+            key: "new-CVEs"
+            value: "{{ kv( 'new-CVEs' ) + 1 }}"
+          - id: new_cve_count_log
+            type: io.kestra.plugin.core.log.Log
+            message: "CVE count: {{ kv( 'new-CVEs' ) }}"
+          - id: ask_ai
+            type: io.kestra.plugin.gemini.StructuredOutputCompletion
+            apiKey: "{{ secret('GEMINI_API_KEY') }}"
+            model: gemini-2.5-flash
+            prompt: "You are a security officer reviewing CVEs and just discovered this new CVE - {{ json(parent.taskrun.value) }}. Priority for CVEs can be high, medium, or low. I need you to determine the priority and if we should mitigate this CVE now or if we can wait. I also need you to specify the actions needed to mitigate the CVE."
+            jsonResponseSchema: |
+              {
+                "type": "object",
+                  "properties": {
+                    "priority": {
+                      "type": "string"
+                    },
+                    "mitigate_now": {
+                      "type": "boolean"
+                    },
+                    "action_plan": {
+                      "type": "string"
+                    }
+                  }
+              }
+          - id: log_response_ai
+            type: io.kestra.core.tasks.log.Log
+            message: "{{ outputs.ask_ai['predictions'] }}"
+            # message: "{{ outputs.ask_ai['predictions'] | first | jq('.content') | first }}"
+          - id: log_response_priority
+            type: io.kestra.core.tasks.log.Log
+            message: "{{ outputs.ask_ai['predictions'] | first | jq('.priority') | first }}"
+          - id: log_response_mitigate
+            type: io.kestra.core.tasks.log.Log
+            message: "{{ outputs.ask_ai['predictions'] | first | jq('.mitigate_now') | first }}"
+          - id: log_response_action_plan
+            type: io.kestra.core.tasks.log.Log
+            message: "{{ outputs.ask_ai['predictions'] | first | jq('.action_plan') | first }}"
 
   
       
