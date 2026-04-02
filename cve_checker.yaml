@@ -67,18 +67,40 @@ tasks:
                     }
                   }
               }
-          - id: log_response_ai
-            type: io.kestra.core.tasks.log.Log
-            message: "{{ outputs.ask_ai[parent.taskrun.value].predictions }}"
-          # - id: log_response_priority
-          #   type: io.kestra.core.tasks.log.Log
-          #   message: "{{ outputs.ask_ai[taskrun.value].predictions | first | jq('.priority') | first }}"
-          # - id: log_response_mitigate
-          #   type: io.kestra.core.tasks.log.Log
-          #   message: "{{ outputs.ask_ai[taskrun.value].predictions | first | jq('.mitigate_now') | first }}"
-          # - id: log_response_action_plan
-          #   type: io.kestra.core.tasks.log.Log
-          #   message: "{{ outputs.ask_ai[taskrun.value].predictions | first | jq('.action_plan') | first }}"
+              
+          - id: return_mitigation
+            type: io.kestra.plugin.core.debug.Return
+            format: "{{ outputs.ask_ai[parent.taskrun.value].predictions | first | jq('.mitigate_now') | first }}"
+
+          - id: send_to_notion
+            type: io.kestra.plugin.notion.database.CreateItem
+            apiToken: "{{ secret('NOTION_SECRET') }}"
+            databaseId: "{{ secret('NOTION_CVE_DB') }}"
+            title: "{{ json(parent.taskrun.value).vulnerabilityName }}"
+            properties:
+              ID:
+                rich_text: [
+                  {
+                    text: 
+                      {
+                        content: "{{ json(parent.taskrun.value).cveID }}"
+                      }
+                  }
+                ]
+              Priority:
+                select: 
+                  name: "{{ outputs.ask_ai[parent.taskrun.value].predictions | first | jq('.priority') | first }}"
+              # "Mitigate now?":
+              #   checkbox: "{{ outputs.ask_ai[parent.taskrun.value].predictions | first | jq('.mitigate_now') | first }}"
+              "Action plan":
+                rich_text: [
+                  {
+                    text: 
+                      {
+                        content: "{{ outputs.ask_ai[parent.taskrun.value].predictions | first | jq('.action_plan') | first }}"
+                      }
+                  }
+                ]
 
   
       
