@@ -24,6 +24,7 @@ tasks:
 
   - id: for_each_cve
     type: io.kestra.plugin.core.flow.ForEach
+    concurrencyLimit: 5
     values: "{{ json(outputs.http_download_cves.body).vulnerabilities }}"
     tasks:
       - id: check_if_stored
@@ -68,17 +69,16 @@ tasks:
               }
           - id: log_response_ai
             type: io.kestra.core.tasks.log.Log
-            message: "{{ outputs.ask_ai['predictions'] }}"
-            # message: "{{ outputs.ask_ai['predictions'] | first | jq('.content') | first }}"
-          - id: log_response_priority
-            type: io.kestra.core.tasks.log.Log
-            message: "{{ outputs.ask_ai['predictions'] | first | jq('.priority') | first }}"
-          - id: log_response_mitigate
-            type: io.kestra.core.tasks.log.Log
-            message: "{{ outputs.ask_ai['predictions'] | first | jq('.mitigate_now') | first }}"
-          - id: log_response_action_plan
-            type: io.kestra.core.tasks.log.Log
-            message: "{{ outputs.ask_ai['predictions'] | first | jq('.action_plan') | first }}"
+            message: "{{ outputs.ask_ai[parent.taskrun.value].predictions }}"
+          # - id: log_response_priority
+          #   type: io.kestra.core.tasks.log.Log
+          #   message: "{{ outputs.ask_ai[taskrun.value].predictions | first | jq('.priority') | first }}"
+          # - id: log_response_mitigate
+          #   type: io.kestra.core.tasks.log.Log
+          #   message: "{{ outputs.ask_ai[taskrun.value].predictions | first | jq('.mitigate_now') | first }}"
+          # - id: log_response_action_plan
+          #   type: io.kestra.core.tasks.log.Log
+          #   message: "{{ outputs.ask_ai[taskrun.value].predictions | first | jq('.action_plan') | first }}"
 
   
       
