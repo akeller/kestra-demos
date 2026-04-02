@@ -67,11 +67,6 @@ tasks:
                     }
                   }
               }
-              
-          - id: return_mitigation
-            type: io.kestra.plugin.core.debug.Return
-            format: "{{ outputs.ask_ai[parent.taskrun.value].predictions | first | jq('.mitigate_now') | first }}"
-
           - id: send_to_notion
             type: io.kestra.plugin.notion.database.CreateItem
             apiToken: "{{ secret('NOTION_SECRET') }}"
