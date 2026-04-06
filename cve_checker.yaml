@@ -7,6 +7,15 @@ triggers:
     type: io.kestra.plugin.core.trigger.Schedule
     cron: "0 0 * * *" # Runs daily at midnight UTC
 
+sla:
+  - id: maxDuration
+    type: MAX_DURATION
+    duration: PT2H
+    behavior: CANCEL #CANCEL, FAIL, NONE
+    labels:
+      sla: miss
+      reason: durationExceeded
+
 tasks:
   - id: zero_new_cve_count
     type: io.kestra.plugin.core.kv.Set
@@ -96,3 +105,8 @@ tasks:
                       }
                   }
                 ]
+
+  
+      
+
+  
