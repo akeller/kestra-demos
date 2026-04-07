@@ -27,10 +27,6 @@ tasks:
     type: io.kestra.plugin.core.http.Request
     uri: https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json
 
-  - id: log_cve_count
-    type: io.kestra.plugin.core.log.Log
-    message: "CVE count: {{ json(outputs.http_download_cves.body).count }}"
-
   - id: for_each_cve
     type: io.kestra.plugin.core.flow.ForEach
     concurrencyLimit: 5
@@ -53,9 +49,6 @@ tasks:
             type: io.kestra.plugin.core.kv.Set
             key: "new-CVEs"
             value: "{{ kv( 'new-CVEs' ) + 1 }}"
-          - id: new_cve_count_log
-            type: io.kestra.plugin.core.log.Log
-            message: "CVE count: {{ kv( 'new-CVEs' ) }}"
           - id: ask_ai
             type: io.kestra.plugin.gemini.StructuredOutputCompletion
             apiKey: "{{ secret('GEMINI_API_KEY') }}"
@@ -94,8 +87,8 @@ tasks:
               Priority:
                 select: 
                   name: "{{ outputs.ask_ai[parent.taskrun.value].predictions | first | jq('.priority') | first }}"
-              # "Mitigate now?":
-              #   checkbox: "{{ outputs.ask_ai[parent.taskrun.value].predictions | first | jq('.mitigate_now') | first }}"
+              "Mitigate now?":
+                checkbox: "{{ outputs.ask_ai[parent.taskrun.value].predictions | first | jq('.mitigate_now') | first }}"
               "Action plan":
                 rich_text: [
                   {
