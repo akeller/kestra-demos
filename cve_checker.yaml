@@ -98,20 +98,19 @@ tasks:
                       }
                   }
                 ]
+          - id: update_page_content
+            type: io.kestra.plugin.notion.page.Update
+            pageId: "{{ outputs.send_to_notion[parent.taskrun.value].pageId }}"
+            content: |
+              {{ json(parent.taskrun.value).notes }}
 
   - id: update_db_description
     type: io.kestra.plugin.notion.database.Update
-    description: "Total CVEs: {{ json(outputs.http_download_cves.body).count }}"
+    databaseDescription: "Total CVEs: {{ json(outputs.http_download_cves.body).count }} | Last run: {{ execution.startDate | date('yyyy-MM-dd HH:mm:ss.SSSSSS') }}"
 
 
 pluginDefaults:
-  - type: io.kestra.plugin.notion.database
+  - type: io.kestra.plugin.notion
     values:
       apiToken: "{{ secret('NOTION_SECRET') }}"
       databaseId: "{{ secret('NOTION_CVE_DB') }}"
-
-
-  
-      
-
-  
