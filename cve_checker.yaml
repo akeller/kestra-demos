@@ -10,7 +10,7 @@ triggers:
 sla:
   - id: maxDuration
     type: MAX_DURATION
-    duration: PT2H
+    duration: PT1H
     behavior: CANCEL #CANCEL, FAIL, NONE
     labels:
       sla: miss
@@ -49,6 +49,7 @@ tasks:
             type: io.kestra.plugin.core.kv.Set
             key: "new-CVEs"
             value: "{{ kv( 'new-CVEs' ) + 1 }}"
+
           - id: ask_ai
             type: io.kestra.plugin.gemini.StructuredOutputCompletion
             apiKey: "{{ secret('GEMINI_API_KEY') }}"
@@ -69,10 +70,9 @@ tasks:
                     }
                   }
               }
+              
           - id: send_to_notion
             type: io.kestra.plugin.notion.database.CreateItem
-            apiToken: "{{ secret('NOTION_SECRET') }}"
-            databaseId: "{{ secret('NOTION_CVE_DB') }}"
             title: "{{ json(parent.taskrun.value).vulnerabilityName }}"
             properties:
               ID:
@@ -88,7 +88,7 @@ tasks:
                 select: 
                   name: "{{ outputs.ask_ai[parent.taskrun.value].predictions | first | jq('.priority') | first }}"
               "Mitigate now?":
-                checkbox: "{{ outputs.ask_ai[parent.taskrun.value].predictions | first | jq('.mitigate_now') | first }}"
+               checkbox: "{{ outputs.ask_ai[parent.taskrun.value].predictions | first | jq('.mitigate_now') | first }}"
               "Action plan":
                 rich_text: [
                   {
@@ -98,6 +98,18 @@ tasks:
                       }
                   }
                 ]
+
+  - id: update_db_description
+    type: io.kestra.plugin.notion.database.Update
+    description: "Total CVEs: {{ json(outputs.http_download_cves.body).count }}"
+
+
+pluginDefaults:
+  - type: io.kestra.plugin.notion.database
+    values:
+      apiToken: "{{ secret('NOTION_SECRET') }}"
+      databaseId: "{{ secret('NOTION_CVE_DB') }}"
+
 
   
       
