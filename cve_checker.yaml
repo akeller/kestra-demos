@@ -1,6 +1,6 @@
 id: cve_checker
 namespace: company.team
-description: A workflow to check for new CVEs daily by comparing with previously known CVEs.
+description: A workflow to check for new CVEs (common vulnerabilties and exposures) daily by comparing with previously known CVEs.
 
 triggers:
   - id: daily_schedule
@@ -106,11 +106,11 @@ tasks:
 
   - id: update_db_description
     type: io.kestra.plugin.notion.database.Update
-    databaseDescription: "Total CVEs: {{ json(outputs.http_download_cves.body).count }} | Last run: {{ execution.startDate | date('yyyy-MM-dd HH:mm:ss.SSSSSS') }}"
-
+    databaseDescription: "Total CVEs: {{ json(outputs.http_download_cves.body).count }} | Last run: {{ execution.startDate | date('yyyy-MM-dd HH:mm:ss') }}"
 
 pluginDefaults:
   - type: io.kestra.plugin.notion
     values:
       apiToken: "{{ secret('NOTION_SECRET') }}"
       databaseId: "{{ secret('NOTION_CVE_DB') }}"
+
